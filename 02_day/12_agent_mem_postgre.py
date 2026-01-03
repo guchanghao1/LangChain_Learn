@@ -3,7 +3,7 @@
 """"""
 # ----------------------------------------------------------------------------------------------------------------------
 # pip install psycopg langgraph-checkpoint-postgres
-# 最常用、最标准的导入方式
+
 from langgraph.checkpoint.postgres import PostgresSaver
 from langchain.agents import create_agent
 from dotenv import load_dotenv

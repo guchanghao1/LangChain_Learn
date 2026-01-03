@@ -19,9 +19,9 @@ print(f"历史消息：{len(messages)}条")
 for message in messages:
     message.pretty_print()
 
-messages_list=messages
+messages_list = messages
 
-message={"role": "human", "content": "再来。"}
+message = {"role": "human", "content": "再来。"}
 messages_list.append(message)
 
 results = agent.invoke({"messages": messages_list})

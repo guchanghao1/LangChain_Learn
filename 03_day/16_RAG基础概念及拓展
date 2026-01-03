@@ -1,0 +1,251 @@
+一、RAG基础概念
+1. RAG是什么？
+检索增强生成（Retrieval-Augmented Generation）
+是一种结合信息检索和大语言模型生成能力的技术框架。
+核心思想是在生成答案前，先从外部知识库检索相关信息作为上下文。
+
+2. 核心流程
+查询 → 检索 → 增强 → 生成 → 答案
+3. 关键组件
+Retriever（检索器）：从知识库中查找相关文档
+
+Generator（生成器）：基于检索内容生成答案
+
+Knowledge Base（知识库）：文档集合的向量存储
+
+二、RAG扩展概念
+1. 高级RAG架构
+┌─────────────────────────────────────────┐
+│              多轮迭代RAG                │
+├─────────────────────────────────────────┤
+│ 查询 → 检索 → 重排序 → 提取 → 生成 → 验证 │
+└─────────────────────────────────────────┘
+2. RAG扩展类型
+a. 检索优化
+密集检索：使用embedding向量相似度
+
+稀疏检索：BM25等传统方法
+
+混合检索：结合密集+稀疏检索
+
+多向量检索：跨模态检索（文本、图像等）
+
+b. 后处理增强
+重排序（Re-ranking）：使用小型模型对检索结果重新排序
+
+查询扩展：扩展原始查询以获得更好结果
+
+上下文压缩：提取最相关的片段
+
+c. 生成优化
+Few-shot提示：提供检索内容作为示例
+
+思维链（CoT）：让模型推理过程
+
+自我验证：生成后进行事实检查
+
+d. 端到端优化
+RAG-Fusion：生成多个查询同时检索
+
+Corrective RAG (CRAG)：添加检索质量评估
+
+Self-RAG：模型自主决定何时检索
+
+3. RAG进阶模式
+迭代RAG：多次检索-生成循环
+
+递归RAG：分层检索（先大纲后细节）
+
+图RAG：基于知识图谱的检索
+
+多文档RAG：跨多个文档综合回答
+
+三、LangChain中的RAG实现
+1. LangChain RAG核心组件
+from langchain.vectorstores import Chroma
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.document_loaders import PyPDFLoader
+from langchain.chains import RetrievalQA
+from langchain.llms import OpenAI
+
+2. 基础RAG实现示例
+# 1. 加载文档
+loader = PyPDFLoader("document.pdf")
+documents = loader.load()
+
+# 2. 分割文本
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=200
+)
+texts = text_splitter.split_documents(documents)
+
+# 3. 创建向量存储
+embeddings = OpenAIEmbeddings()
+vectorstore = Chroma.from_documents(texts, embeddings)
+
+# 4. 创建检索器
+retriever = vectorstore.as_retriever(
+    search_type="similarity",
+    search_kwargs={"k": 4}
+)
+
+# 5. 创建RAG链
+qa_chain = RetrievalQA.from_chain_type(
+    llm=OpenAI(),
+    chain_type="stuff",  # 有stuff/map_reduce/refine等
+    retriever=retriever,
+    return_source_documents=True
+)
+3. 高级LangChain RAG模式
+a. 带重排序的RAG
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import LLMChainExtractor
+
+# 创建压缩检索器
+compressor = LLMChainExtractor.from_llm(OpenAI())
+compression_retriever = ContextualCompressionRetriever(
+    base_retriever=retriever,
+    base_compressor=compressor
+)
+b. 多查询RAG
+from langchain.retrievers.multi_query import MultiQueryRetriever
+
+multi_retriever = MultiQueryRetriever.from_llm(
+    retriever=vectorstore.as_retriever(),
+    llm=OpenAI()
+)
+c. 父文档检索器
+from langchain.retrievers import ParentDocumentRetriever
+from langchain.storage import InMemoryStore
+
+# 存储原始文档
+store = InMemoryStore()
+parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
+child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
+
+parent_retriever = ParentDocumentRetriever(
+    vectorstore=vectorstore,
+    docstore=store,
+    child_splitter=child_splitter,
+    parent_splitter=parent_splitter
+)
+d. 带记忆的对话RAG
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferMemory
+
+memory = ConversationBufferMemory(
+    memory_key="chat_history",
+    return_messages=True
+)
+
+conversation_chain = ConversationalRetrievalChain.from_llm(
+    llm=OpenAI(),
+    retriever=retriever,
+    memory=memory
+)
+4. LangChain Agents + RAG
+from langchain.agents import AgentType, initialize_agent
+from langchain.tools import Tool
+
+# 将RAG链作为工具
+tools = [
+    Tool(
+        name="Knowledge Base",
+        func=qa_chain.run,
+        description="Useful for answering questions"
+    )
+]
+
+agent = initialize_agent(
+    tools=tools,
+    llm=OpenAI(),
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    verbose=True
+)
+四、最佳实践和优化
+1. 分块策略优化
+# 语义分块
+from langchain_experimental.text_splitter import SemanticChunker
+from langchain.embeddings import OpenAIEmbeddings
+
+embeddings = OpenAIEmbeddings()
+text_splitter = SemanticChunker(embeddings)
+2. 检索优化
+# 混合检索
+from langchain.retrievers import BM25Retriever, EnsembleRetriever
+
+# 创建BM25检索器
+bm25_retriever = BM25Retriever.from_documents(texts)
+bm25_retriever.k = 2
+
+# 创建向量检索器
+vector_retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+
+# 组合检索器
+ensemble_retriever = EnsembleRetriever(
+    retrievers=[bm25_retriever, vector_retriever],
+    weights=[0.5, 0.5]
+)
+3. 评估和监控
+from langchain.evaluation import load_dataset
+from langchain.evaluation import EvaluatorType
+from langchain.evaluation import PairwiseStringEvaluator
+
+# 使用RAGAS进行评估
+# https://github.com/explodinggradients/ragas
+
+五、实际应用架构示例
+class AdvancedRAGSystem:
+    def __init__(self):
+        # 1. 多级索引
+        self.summary_index = self.create_summary_index()
+        self.detailed_index = self.create_detailed_index()
+
+        # 2. 多检索器
+        self.retrievers = {
+            "summary": self.summary_retriever,
+            "detailed": self.detailed_retriever,
+            "hybrid": self.hybrid_retriever
+        }
+
+        # 3. 查询路由
+        self.query_router = self.create_query_router()
+
+    def query(self, question, use_reranker=True):
+        # 1. 查询分类
+        query_type = self.classify_query(question)
+
+        # 2. 选择检索器
+        retriever = self.retrievers[query_type]
+
+        # 3. 检索
+        docs = retriever.get_relevant_documents(question)
+
+        # 4. 重排序（可选）
+        if use_reranker:
+            docs = self.rerank(docs, question)
+
+        # 5. 生成
+        answer = self.generate_answer(question, docs)
+
+        # 6. 验证和引用
+        answer_with_citations = self.add_citations(answer, docs)
+
+        return answer_with_citations
+六、趋势和未来方向
+自适应RAG：动态调整检索和生成策略
+
+多模态RAG：处理图像、音频等多模态数据
+
+增量RAG：实时更新知识库
+
+联邦RAG：跨多个知识源检索
+
+可解释RAG：提供检索和生成的可解释性
+
+总结
+RAG的核心价值在于将LLM的知识生成能力与外部知识源的准确性相结合。LangChain提供了丰富的工具链来实现和扩展RAG系统，从基础的检索-生成到复杂的多步骤、多模态RAG应用。
+
+实际应用中，建议根据具体需求选择合适的RAG模式，并持续评估和优化检索质量、生成准确性和系统效率。

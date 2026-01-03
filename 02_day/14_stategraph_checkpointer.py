@@ -20,7 +20,7 @@ class State(TypedDict):
     foo: str
     bar: Annotated[list[str], add]
 
-
+# 节点
 def node_a(state: State):
     return {"foo": "a", "bar": ["a"]}
 
