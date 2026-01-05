@@ -23,7 +23,8 @@ model = init_chat_model(
     max_token=1000
 )
 for chunk in model.stream('给我一篇现代诗词'):
-    print(chunk.content, end='', flush=True)
+    # print(chunk.content, end='', flush=True)
+    print(chunk)
 '''
 httpcore.ConnectError: 
 [WinError 10061] 由于目标计算机积极拒绝，无法连接。

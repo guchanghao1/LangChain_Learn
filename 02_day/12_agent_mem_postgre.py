@@ -7,7 +7,6 @@
 from langgraph.checkpoint.postgres import PostgresSaver
 from langchain.agents import create_agent
 from dotenv import load_dotenv
-from langgraph.checkpoint.memory import InMemorySaver
 
 load_dotenv()
 

@@ -64,5 +64,4 @@ def retriever(query: str) -> List[Document]:
 
 
 results = retriever.invoke('安全宣传标语？')
-for i, result in enumerate(results, 1):
-    print(f'{i}-{result.page_content[:50]}')
+

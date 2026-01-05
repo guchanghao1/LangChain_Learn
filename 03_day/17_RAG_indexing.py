@@ -19,6 +19,7 @@ from langchain_chroma import Chroma
 
 import os
 import shutil
+
 if os.path.exists("./17_chroma_rag_bd"):
     shutil.rmtree("./17_chroma_rag_bd")
 

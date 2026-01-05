@@ -24,19 +24,18 @@ agent = create_agent(
 )
 
 # 第一种 message-message
-'''
-for event in  agent.stream(
-    {"messages": [{"role": "human", "content": "上海今天的的天气怎么样？"}]},
-    stream_mode="values"  # 以消息为单位
+for event in agent.stream(
+        {"messages": [{"role": "human", "content": "上海今天的的天气怎么样？"}]},
+        stream_mode="values"  # 以消息为单位
 ):
-
     messages = event["messages"]
     print(f"历史消息：{len(messages)}条")
     # for message in messages:
     #     message.pretty_print()
     messages[-1].pretty_print()
+
+# 第二种（这是两个主要的，还要多种） token-token
 '''
-# 第二种（主要的，还要多种） token-token
 for chunk in agent.stream(
         {"messages": [{"role": "human", "content": "上海今天的的天气怎么样？"}]},
         stream_mode="messages"  # 以token为单位
@@ -61,3 +60,4 @@ for chunk in agent.stream(
     # 'ls_model_type': 'chat',
     # 'ls_temperature': None}
     # )
+'''

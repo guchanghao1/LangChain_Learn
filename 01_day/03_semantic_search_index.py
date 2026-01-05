@@ -92,13 +92,14 @@ print(vector_0)  # [0.0077065364, 0.017068036, -0.1393289,......,]
 
 # 4（3）.向量库：把多个文本段/向量存入向量库(融合第三步)
 from langchain_chroma import Chroma
-vector_store=Chroma(
+
+vector_store = Chroma(
     collection_name='example_collection',
     embedding_function=embedding,
     persist_directory='./chroma_langchain_bd',
 )
 
-ids=vector_store.add_documents(documents=all_splits)
+ids = vector_store.add_documents(documents=all_splits)
 print(len(ids))
 print(ids)
 # 运行会记录存储内容，不可过多运行，会累计
