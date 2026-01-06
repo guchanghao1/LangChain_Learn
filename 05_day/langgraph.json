@@ -1,0 +1,9 @@
+{
+  "dependencies": [
+    "."
+  ],
+  "graphs": {
+    "agent": "./22_text_langsmith.py:agent"
+  },
+  "env": ".env"
+}
